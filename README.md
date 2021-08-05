@@ -35,7 +35,7 @@ Rscript PairFind.Linux.R -d test.data/test.data.txt -g test.data/test.phenodata.
 
 ### Output
 - **Decre.aveRank.P** : P value based on averange rank. Generally, to confirm the significant features, we usually use variable `Decre.aveRank.P` to evaluate the disease-enriched features and `Incre.aveRank.P` to evaluate the control enriched features. 
-- - **Incre.aveRank.P** : P value based on averange rank. Generally, to confirm the significant features, we usually use variable `Decre.aveRank.P` to evaluate the disease-enriched features and `Incre.aveRank.P` to evaluate the control enriched features. 
+- **Incre.aveRank.P** : P value based on averange rank. Generally, to confirm the significant features, we usually use variable `Decre.aveRank.P` to evaluate the disease-enriched features and `Incre.aveRank.P` to evaluate the control enriched features. 
 - **Decre.minRank.P** : P value based on min rank.
 - **Incre.minRank.P** : P value based on min rank.
 - **Decre.maxRank.P** : P value based on max rank.

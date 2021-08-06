@@ -18,7 +18,7 @@ unzip VTwins.Linux-main.gz
 
 ### Basic Usage
 <pre>
-Rscript PairFind.Linux.R -d test.data/test.data.txt -g test.data/test.phenodata.txt -a test.data/ -m euclidean -s 10000 -u 0.8 -n 0.2 -w ShuffleWstat -b BoundarySample -p BoundaryPair -o Results.txt
+Rscript PairFind.Linux.R -d test.data/test.data.txt -g test.data/test.phenodata.txt -a test.data/ -m euclidean -s 10000 -u 0.8 -n 0.2 -w ShuffleWstat -b BoundarySample -p BoundaryPair -o Results.txt -c 0.01
 </pre>
 
 ### Parameter Description
@@ -32,18 +32,21 @@ Rscript PairFind.Linux.R -d test.data/test.data.txt -g test.data/test.phenodata.
 - `-s`: shuffle time
 - `-n`: lower percentage of shuffle pairs
 - `-u`: higher percentage of shuffle pairs
+- `-c`: p value cutoff of `Incre.aveRank.P` and `Decre.aveRank.P`
 
 ### Output
 - **Decre.aveRank.P** : P value based on averange rank. Generally, to confirm the significant features, we usually use variable `Decre.aveRank.P` to evaluate the disease-enriched features and `Incre.aveRank.P` to evaluate the control enriched features. 
 - **Incre.aveRank.P** : P value based on averange rank. Generally, to confirm the significant features, we usually use variable `Decre.aveRank.P` to evaluate the disease-enriched features and `Incre.aveRank.P` to evaluate the control enriched features. 
-- **Decre.minRank.P** : P value based on min rank.
-- **Incre.minRank.P** : P value based on min rank.
-- **Decre.maxRank.P** : P value based on max rank.
-- **Incre.maxRank.P** : P value based on max rank.
+- Decre.minRank.* : P value based on min rank.
+- Incre.minRank.P : P value based on min rank.
+- Decre.maxRank.P : P value based on max rank.
+- Incre.maxRank.P : P value based on max rank.
 - **Species** : Feature
-- **Decre.maxRank.P.FDR** : P.adjust of Decre.maxRank.P
-- **Decre.minRank.P.FDR** : P.adjust of Decre.minRank.P
+- **Enriched** : phenotype-enriched groups with provided p value cutoff
+- Decre.maxRank.P.FDR : P.adjust of Decre.maxRank.P
+- Decre.minRank.P.FDR : P.adjust of Decre.minRank.P
 - **Decre.aveRank.P.FDR** : P.adjust of Decre.aveRank.P
+- **Incre.aveRank.P.FDR** : P.adjust of Incre.aveRank.P
 - Decreasing.Rank.Max : shuffle W stats rank based on max method by decreasing
 - Increasing.Rank.Max : shuffle W stats rank based on max method by increasing
 - Decreasing.Rank.Min : shuffle W stats rank based on min method by decreasing

@@ -11,7 +11,7 @@ unzip VTwins.Linux-main.gz
 
 ### Dependence
 
-**R package**
+**R package** R version 4.0.5
 
 - tidyverse_1.3.1
 - optparse_1.6.6

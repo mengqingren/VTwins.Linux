@@ -9,10 +9,19 @@ git clone https://github.com/mengqingren/VTwins.Linux.git
 unzip VTwins.Linux-main.gz
 </pre>
 
+### Description
+- PairFind.Linux.R : R script to perform phynotype-enriched features
+- Shuffle.WilcoxonScore.R : R script to process data and plot
+- test.data : Directory including mock datasets and real datas to test the R scripts
+- Unique.Pair.Permutation: Processed data and figures
+- Species.EightDatasets : Directory of CRC integrated datasets for species
+- Pathway.EightDatasets : Directory of CRC integrated datasets for pathways
+
+
 ### Dependence
 
-**R package** R version 4.0.5
-
+**R package** 
+- R version 4.0.5
 - tidyverse_1.3.1
 - optparse_1.6.6
 

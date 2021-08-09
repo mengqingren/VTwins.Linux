@@ -1571,7 +1571,7 @@ for (name in Study) {
 }
 
 ###########################################################################################################################
-########### Fig 1 #############
+########### Fig 1 - MIN #############
 #### dataset ######
 setwd("K:/CRC-Pair/Unique.Pair.Permutation")
 Fig1Data <- data.frame()
@@ -1591,11 +1591,17 @@ for (name in Study) {
     rbind(Fig1Data)
   #Pair
   middata <- read.csv(paste("Unique.Pair.Sample",name,".0.2.0.8.10000.Feature.Shuffle.Rank.Pvalue.csv",sep = ''))
-  Fig1Data  <- na.omit(middata) %>% data.frame() %>% arrange(Decre.aveRank.P) %>% mutate(Rank = round(rank(Decre.aveRank.P,ties.method = "min"),0)) %>% 
+  Fig1Data.mid  <- na.omit(middata) %>% data.frame() %>% filter(!((Increasing.Rank.Min == 1) & (Decreasing.Rank.Min == 1)))
+  Fig1Data.mid$Incre.minRank.P <- Fig1Data.mid$Increasing.Rank.Min/10001
+  Fig1Data.mid2 <- data.frame(Species = c(Fig1Data.mid$Species,Fig1Data.mid$Species),Pvalue = c(Fig1Data.mid$Incre.minRank.P,Fig1Data.mid$Decre.minRank.P))
+  Fig1Data.mid3 <- Fig1Data.mid2 %>% data.frame() %>% dplyr::arrange(Species) %>% group_by(Species) %>% top_n(-1,Pvalue) %>% unique()
+  
+  
+  Fig1Data <- Fig1Data.mid3 %>% data.frame() %>% dplyr::arrange(Pvalue) %>% data.frame() %>% mutate(Rank = rank(Pvalue,ties.method = "min")) %>% 
     filter(Species %in% IntersectSpecies$Species) %>% mutate(Study = name) %>%
-    select(Species,Study,Decre.aveRank.P,Rank) %>% 
-    mutate(Country = paste(StudyPos[index],".2",sep = ''),Test="Pair") %>% rename(Species=1,Study=2,FDR=3,Rank=4,Country=5,Test=6) %>%
-    rbind(Fig1Data )
+    select(Species,Study,Pvalue,Rank) %>% 
+    mutate(Country = paste(StudyPos[index],".2",sep = ''),Test="Pair") %>% dplyr::rename(Species=1,Study=2,FDR=3,Rank=4,Country=5,Test=6) %>%
+    rbind(Fig1Data)
 }
 
 #Meta Wilcoxon
@@ -1607,10 +1613,17 @@ Fig1Data  <- na.omit(MetaData) %>% data.frame() %>% arrange(adj.fdr.p) %>% mutat
 
 #Meta Pair
 MetaData <- read.csv("Unique.Pair.SampleAll.0.2.0.8.10000.Feature.Shuffle.Rank.Pvalue.csv")
-Fig1Data  <- na.omit(MetaData) %>% data.frame() %>% arrange(Decre.aveRank.P) %>% mutate(Rank = round(rank(Decre.aveRank.P,ties.method = "min"),0),Study="Meta") %>% 
-  filter(Species %in% IntersectSpecies$Species) %>% select(Species,Study,Decre.aveRank.P,Rank) %>% 
-  mutate(Country = "Meta.2",Test="Pair") %>% rename(Species=1,Study=2,FDR=3,Rank=4,Country=5,Test=6) %>%
-  rbind(Fig1Data )
+Fig1Data.mid  <- na.omit(MetaData) %>% data.frame() %>% filter(!((Increasing.Rank.Min == 1) & (Decreasing.Rank.Min== 1)))
+Fig1Data.mid$Incre.minRank.P <- Fig1Data.mid$Increasing.Rank.Min/10001
+Fig1Data.mid2 <- data.frame(Species = c(Fig1Data.mid$Species,Fig1Data.mid$Species),Pvalue = c(Fig1Data.mid$Incre.minRank.P,Fig1Data.mid$Decre.minRank.P))
+Fig1Data.mid3 <- Fig1Data.mid2 %>% data.frame() %>% arrange(Species) %>% group_by(Species) %>% top_n(-1,Pvalue) %>% unique()
+
+Fig1Data <- Fig1Data.mid3 %>% data.frame() %>% arrange(Pvalue) %>% mutate(Rank = round(rank(Pvalue,ties.method = "min"),0)) %>% 
+  filter(Species %in% IntersectSpecies$Species) %>% mutate(Study="Meta") %>%
+  dplyr::select(Species,Study,Pvalue,Rank) %>% 
+  mutate(Country = "Meta.2",Test="Pair") %>% dplyr::rename(Species=1,Study=2,FDR=3,Rank=4,Country=5,Test=6) %>%
+  rbind(Fig1Data)
+
 write.csv(Fig1Data,"Figure/Figure1.Data.csv")
 
 Pdata <- Fig1Data %>% select(Species,Country,FDR,Test) %>% arrange(Country) %>% arrange(desc(Test))
@@ -1704,10 +1717,134 @@ Heatmap(Pdata.2.mid2, rect_gp = gpar(lwd = 1, col = "black"),
 )
 dev.off()
 
-########### Fig S1 #########
-Fig1Data <- read.csv("Figure/Figure1.Data.csv",row.names = 1)
+########### Fig 1 - AVE #############
+#### dataset ######
+setwd("K:/CRC-Pair/Unique.Pair.Permutation")
+Fig1Data <- data.frame()
+IntersectSpecies <- read_excel("MetaIntersectSpecies.xlsx")
+IntersectSpecies$Species <- IntersectSpecies$Species %>% str_replace_all(" ","_")
+
+Study <- c("FengQ_2015","ThomasAM_2018a","ThomasAM_2018b","VogtmannE_2016","YuJ_2015","ZellerG_2014","PRJDB4176","PRJEB27928")
+StudyPos <- c("AUS","ITA1","ITA2","USA","CHI","FRA","JAP","GER")
+
+for (name in Study) {
+  index <- which(Study == name)
+  middata <- read.csv(paste(name,"-Metaphlan2-wilcoxonTest.csv",sep = ''))
+  #Wilcon Test
+  Fig1Data  <- na.omit(middata) %>% data.frame() %>% arrange(adj.fdr.p) %>% mutate(Rank = round(rank(adj.fdr.p,ties.method = "min"),0)) %>% 
+    filter(Species %in% IntersectSpecies$Species) %>% select(Species,Study,adj.fdr.p,Rank) %>% 
+    mutate(Country = paste(StudyPos[index],".1",sep = ''),Test="Wilcoxon") %>% rename(Species=1,Study=2,FDR=3,Rank=4,Country=5,Test=6) %>%
+    rbind(Fig1Data)
+  #Pair
+  middata <- read.csv(paste("Unique.Pair.Sample",name,".0.2.0.8.10000.Feature.Shuffle.Rank.Pvalue.csv",sep = ''))
+  Fig1Data.mid  <- na.omit(middata) %>% data.frame() %>% filter(!((Increasing.Rank.Min == 1) & (Decreasing.Rank.Min == 1)))
+  Fig1Data.mid$Incre.aveRank.P <- Fig1Data.mid$Increasing.Rank.Average/10001
+  Fig1Data.mid2 <- data.frame(Species = c(Fig1Data.mid$Species,Fig1Data.mid$Species),Pvalue = c(Fig1Data.mid$Incre.aveRank.P,Fig1Data.mid$Decre.aveRank.P))
+  Fig1Data.mid3 <- Fig1Data.mid2 %>% data.frame() %>% dplyr::arrange(Species) %>% group_by(Species) %>% top_n(-1,Pvalue) %>% unique()
+  
+  
+  Fig1Data <- Fig1Data.mid3 %>% data.frame() %>% dplyr::arrange(Pvalue) %>% data.frame() %>% mutate(Rank = rank(Pvalue,ties.method = "min")) %>% 
+    filter(Species %in% IntersectSpecies$Species) %>% mutate(Study = name) %>%
+    select(Species,Study,Pvalue,Rank) %>% 
+    mutate(Country = paste(StudyPos[index],".2",sep = ''),Test="Pair") %>% dplyr::rename(Species=1,Study=2,FDR=3,Rank=4,Country=5,Test=6) %>%
+    rbind(Fig1Data)
+}
+
+#Meta Wilcoxon
+MetaData <- read.csv("../Species-8Study-20201010/All-8Study-Contained-Species-wilcoxon-test.csv")
+Fig1Data  <- na.omit(MetaData) %>% data.frame() %>% arrange(adj.fdr.p) %>% mutate(Rank = round(rank(adj.fdr.p,ties.method = "min"),0),Study="Meta") %>% 
+  filter(Species %in% IntersectSpecies$Species) %>% select(Species,Study,adj.fdr.p,Rank) %>% 
+  mutate(Country = "Meta.1",Test="Wilcoxon") %>% rename(Species=1,Study=2,FDR=3,Rank=4,Country=5,Test=6) %>%
+  rbind(Fig1Data )
+
+#Meta Pair
+MetaData <- read.csv("Unique.Pair.SampleAll.0.2.0.8.10000.Feature.Shuffle.Rank.Pvalue.csv")
+Fig1Data.mid  <- na.omit(MetaData) %>% data.frame() %>% filter(!((Increasing.Rank.Min == 1) & (Decreasing.Rank.Min== 1)))
+Fig1Data.mid$Incre.aveRank.P <- Fig1Data.mid$Increasing.Rank.Average/10001
+Fig1Data.mid2 <- data.frame(Species = c(Fig1Data.mid$Species,Fig1Data.mid$Species),Pvalue = c(Fig1Data.mid$Incre.aveRank.P,Fig1Data.mid$Decre.aveRank.P))
+Fig1Data.mid3 <- Fig1Data.mid2 %>% data.frame() %>% arrange(Species) %>% group_by(Species) %>% top_n(-1,Pvalue) %>% unique()
+
+Fig1Data <- Fig1Data.mid3 %>% data.frame() %>% arrange(Pvalue) %>% mutate(Rank = round(rank(Pvalue,ties.method = "min"),0)) %>% 
+  filter(Species %in% IntersectSpecies$Species) %>% mutate(Study="Meta") %>%
+  dplyr::select(Species,Study,Pvalue,Rank) %>% 
+  mutate(Country = "Meta.2",Test="Pair") %>% dplyr::rename(Species=1,Study=2,FDR=3,Rank=4,Country=5,Test=6) %>%
+  rbind(Fig1Data)
+
+write.csv(Fig1Data,"Figure/Figure1.AVE.Data.csv")
+
+Pdata <- Fig1Data %>% select(Species,Country,FDR,Test) %>% arrange(Country) %>% arrange(desc(Test))
+Pdata$Species <- factor(Pdata$Species,levels = IntersectSpecies$Species)
+Pdata <- Pdata[order(Pdata$Species),] %>% data.frame() %>% select(-Test) %>% spread(Country,FDR) %>% remove_rownames() %>%
+  column_to_rownames("Species")
+write.csv(Pdata,"Figure/Fig1a.AVE.csv")
+
+#### Fig 1 ####
+Pdata.1 <- read.csv("Figure/Fig1a.AVE.csv",row.names = 1,stringsAsFactors = F)
+Pdata.1 <- Pdata.1 %>% arrange(Meta.2,Meta.1)
+#Pdata <- t(Pdata)
+#rownames(Pdata.1) <- rownames(Pdata.1) %>% str_replace_all("_"," ")
+Pdata <- read.csv("Figure/Fig1a.AVE.csv",row.names = 1,stringsAsFactors = F)
+Pdata <- Pdata %>% rownames_to_column() %>%
+  gather(key = "Condition",value = "FDR",-rowname)
+
+labels = c("<0.001","0.001-0.01","0.01-0.05",">0.05")
+breaks <- c(-1,0.001,0.01,0.05,1)
+breaks2 <- c(0,001,0.01,0.05)
+#mid <- data.frame(labels=labels,breaks=breaks2)
+Pdata$labels = cut(Pdata$FDR,breaks,labels,ordered_result = T)
+#Pdata<-merge(Pdata,mid,by= "labels")
+#Pdata$alpha <- Pdata$FDR/Pdata$breaks
+Pdata$rowname <-factor(Pdata$rowname,levels = rownames(Pdata.1))
+interval.cols <- c("#8B1A1A","#FF6A6A","#FFC1C1","#EEE9E9")#brewer.pal(6,"Set2")
+names(interval.cols) <- levels(Pdata$labels)
+
+Pdata.2 <- Pdata %>% select(labels,rowname,Condition) %>% spread(Condition,labels) %>% 
+  mutate(rowname = factor(rowname,levels = rownames(Pdata.1))) %>% arrange(rowname) %>%
+  remove_rownames() %>% column_to_rownames("rowname") %>%
+  select(colnames(Pdata.1))
+
+## text note => False
+TextFunc <- function(dat, col = "black", fontsize = 8, numdat = TRUE,digit = 2){
+  if(numdat == TRUE){
+    function(j, i, x, y, width, height, fill){
+      grid.text(sprintf("%.0e", dat[i, j]), x, y, gp = gpar(fontsize = fontsize, col  = col))
+    }
+  }else{
+    function(j, i, x, y, width, height, fill){
+      grid.text(sprintf("%.0e", dat[i, j]), x, y, gp = gpar(fontsize = fontsize, col  = col))
+    }
+  }}
+###
+col_cat <- c("<0.001"="#8B1A1A","0.001-0.01"="#FF6A6A","0.01-0.05"="#FFC1C1",">0.05"="#EEE9E9")
+
+### Sperate the data for twins cohort and original cohort
+
+### Fig1 Middle
+Pdata.2.mid2 <- Pdata.2 %>% select(ends_with(".2")) %>% select(paste(Country.Heatmap,".2",sep = ''))
+rownames(Pdata.2.mid2) <- rownames(Pdata.2.mid2) %>% str_replace_all("_"," ")
+colnames(Pdata.2.mid2) = Country.Heatmap
+Pdata.2.mid2 <- t(Pdata.2.mid2)
+
+Pdata.1.mid2 <- Pdata.1 %>% select(ends_with(".2")) %>% select(paste(Country.Heatmap,".2",sep = ''))
+rownames(Pdata.1.mid2) <- rownames(Pdata.1.mid2) %>% str_replace_all("_"," ")
+colnames(Pdata.1.mid2) = Country.Heatmap
+Pdata.1.mid2 <- t(Pdata.1.mid2)
+
+
+pdf("Figure/Fig1a.Middle.AVE.pdf",width = 7,height = 5)
+Heatmap(Pdata.2.mid2, rect_gp = gpar(lwd = 1, col = "black"), 
+        name = "FDR",
+        col = col_cat,
+        show_row_names = T,
+        show_column_names = T,na_col="white",
+        cell_fun = TextFunc(Pdata.1.mid2)
+)
+dev.off()
+
+########### Fig S1 - AVE #########
+Fig1Data <- read.csv("Figure/Figure1.AVE.Data.csv",row.names = 1)
 Pdata2 <- Fig1Data %>% select(Species,Country,Rank,Test) %>% arrange(Country) %>% arrange(desc(Test))
-Pdata2$Species <- factor(Pdata2$Species,levels = IntersectSpecies$Species)
+#Pdata2$Species <- factor(Pdata2$Species,levels = IntersectSpecies$Species)
 Pdata2 <- Pdata2[order(Pdata2$Species),] %>% data.frame() %>% select(-Test) %>% spread(Country,Rank) %>% remove_rownames() %>%
   column_to_rownames("Species")
 write.csv(Pdata2,"Figure/Fig1b.csv")
@@ -1751,7 +1888,7 @@ dPdata5 <- dPdata3 %>% select(Rank,rowname,Condition) %>% spread(Condition,Rank)
 colnames(dPdata5) = Country.Heatmap
 
 col_cat <- c("1-10"="#8B1A1A","10-20"="#EE0000","20-30"="#FF6A6A","30-40"="#FFC1C1","40-50"="#CDC9C9",">50"="#EEE9E9")
-pdf("Figure/FigS1.Right.pdf",width = 6,height = 3)
+pdf("Figure/FigS1.Right.AVE.pdf",width = 6,height = 3)
 Heatmap(dPdata4, rect_gp = gpar(lwd = 1, col = "black"), 
         name = "FDR",
         col = col_cat,
@@ -2190,7 +2327,7 @@ p<-ggplot(AllAUC%>%filter(Condition == "ExcludeStudy"),aes(FeatureCount,AUC))+
 
 ggsave(p,filename = "../Figure/FigS3.pdf",height = 4,width = 4)
 
-########### Fig S4 ##########
+########### Fig S5 - Min ##########
 setwd("K:/CRC-Pair/Unique.Pair.Permutation/PATHWAY.PERMUTATION")
 AllPathway <- read.csv("All-8Study-Contained-Pathway-pair-wilcoxonsign-res.csv")
 AllPathway$Incre.aveRank.P <- AllPathway$Increasing.Rank.Average/10001
@@ -2212,13 +2349,13 @@ for (name in Study) {
     rbind(FigS5Data)
   #Pair
   middata <- read.csv(paste(name,"-Humann2-PairWilcoxonSign.csv",sep = ''),stringsAsFactors = F)
-  FigS5Data.mid  <- na.omit(middata) %>% data.frame()
-  FigS5Data.mid$Incre.aveRank.P <- FigS5Data.mid$Increasing.Rank.Average/10001
-  FigS5Data.mid2 <- data.frame(Species = c(FigS5Data.mid$Species,FigS5Data.mid$Species),Pvalue = c(FigS5Data.mid$Incre.aveRank.P,FigS5Data.mid$Decre.aveRank.P))
-  FigS5Data.mid3 <- FigS5Data.mid2 %>% arrange(Species) %>% group_by(Species) %>% top_n(-1,Pvalue) %>% unique()
+  FigS5Data.mid  <- na.omit(middata) %>% data.frame() %>% filter(!((Increasing.Rank.Min == 1) & (Decreasing.Rank.Min == 1)))
+  FigS5Data.mid$Incre.minRank.P <- FigS5Data.mid$Increasing.Rank.Min/10001
+  FigS5Data.mid2 <- data.frame(Species = c(FigS5Data.mid$Species,FigS5Data.mid$Species),Pvalue = c(FigS5Data.mid$Incre.minRank.P,FigS5Data.mid$Decre.minRank.P))
+  FigS5Data.mid3 <- FigS5Data.mid2%>% data.frame() %>% arrange(Species) %>% group_by(Species) %>% top_n(-1,Pvalue) %>% unique()
   
   
-  FigS5Data <- FigS5Data.mid3 %>% arrange(Pvalue) %>% mutate(Rank = round(rank(Pvalue,ties.method = "min"),0)) %>% 
+  FigS5Data <- FigS5Data.mid3%>% data.frame() %>% arrange(Pvalue) %>% mutate(Rank = round(rank(Pvalue,ties.method = "min"),0)) %>% 
     filter(Species %in% AllPathway4$Species) %>% mutate(Study = name) %>%
     select(Species,Study,Pvalue,Rank) %>% 
     mutate(Country = paste(StudyPos[index],".2",sep = ''),Test="Pair") %>% dplyr::rename(Species=1,Study=2,FDR=3,Rank=4,Country=5,Test=6) %>%
@@ -2234,12 +2371,12 @@ FigS5Data  <- na.omit(MetaData) %>% data.frame() %>% arrange(adj.fdr.p) %>% muta
 
 #Meta Pair
 MetaData <- read.csv("All-8Study-Contained-Pathway-pair-wilcoxonsign-res.csv")
-FigS5Data.mid  <- na.omit(MetaData) %>% data.frame()
-FigS5Data.mid$Incre.aveRank.P <- FigS5Data.mid$Increasing.Rank.Average/10001
-FigS5Data.mid2 <- data.frame(Species = c(FigS5Data.mid$Species,FigS5Data.mid$Species),Pvalue = c(FigS5Data.mid$Incre.aveRank.P,FigS5Data.mid$Decre.aveRank.P))
-FigS5Data.mid3 <- FigS5Data.mid2 %>% arrange(Species) %>% group_by(Species) %>% top_n(-1,Pvalue) %>% unique()
+FigS5Data.mid  <- na.omit(MetaData) %>% data.frame() %>% filter(!((Increasing.Rank.Min == 1) & (Decreasing.Rank.Min == 1)))
+FigS5Data.mid$Incre.minRank.P <- FigS5Data.mid$Increasing.Rank.Min/10001
+FigS5Data.mid2 <- data.frame(Species = c(FigS5Data.mid$Species,FigS5Data.mid$Species),Pvalue = c(FigS5Data.mid$Incre.minRank.P,FigS5Data.mid$Decre.minRank.P))
+FigS5Data.mid3 <- FigS5Data.mid2%>% data.frame() %>% arrange(Species) %>% group_by(Species) %>% top_n(-1,Pvalue) %>% unique()
 
-FigS5Data <- FigS5Data.mid3 %>% arrange(Pvalue) %>% mutate(Rank = round(rank(Pvalue,ties.method = "min"),0)) %>% 
+FigS5Data <- FigS5Data.mid3%>% data.frame() %>% arrange(Pvalue) %>% mutate(Rank = round(rank(Pvalue,ties.method = "min"),0)) %>% 
   filter(Species %in% AllPathway4$Species) %>% mutate(Study="Meta") %>%
   dplyr::select(Species,Study,Pvalue,Rank) %>% 
   mutate(Country = "Meta.2",Test="Pair") %>% dplyr::rename(Species=1,Study=2,FDR=3,Rank=4,Country=5,Test=6) %>%
@@ -2339,8 +2476,153 @@ Heatmap(Pdata.2.mid2, rect_gp = gpar(lwd = 1, col = "black"),
 dev.off()
 
 
-###########################################################################################################################
+########### Fig S5 - AVE #####################
+setwd("K:/CRC-Pair/Unique.Pair.Permutation/PATHWAY.PERMUTATION")
+AllPathway <- read.csv("All-8Study-Contained-Pathway-pair-wilcoxonsign-res.csv")
+AllPathway$Incre.aveRank.P <- AllPathway$Increasing.Rank.Average/10001
+AllPathway2 <- AllPathway %>% mutate(Enriched = if_else(Incre.aveRank.P <= 0.05,"Ctrl",if_else(Decre.aveRank.P <= 0.05,"Disease","N.S.")))
+AllPathway3 <- AllPathway2 %>% mutate(log2FC = log2(as.numeric(Dismean)/as.numeric(Ctlmean)))
+AllPathway4 <- AllPathway3 %>% filter(Shape == "A")
+## Dataset
+FigS5Data <- data.frame()
+Study <- c("FengQ_2015","ThomasAM_2018a","ThomasAM_2018b","VogtmannE_2016","YuJ_2015","ZellerG_2014","PRJDB4176","PRJEB27928")
+StudyPos <- c("AUS","ITA1","ITA2","USA","CHI","FRA","JAP","GER")
 
+for (name in Study) {
+  index <- which(Study == name)
+  middata <- read.csv(paste(name,"-Humann2-wilcoxonTest.csv",sep = ''))
+  #Wilcon Test
+  FigS5Data  <- na.omit(middata) %>% data.frame() %>% dplyr::arrange(adj.fdr.p) %>% mutate(Rank = round(rank(adj.fdr.p,ties.method = "min"),0)) %>% 
+    filter(Pathway %in% AllPathway4$Species) %>% dplyr::select(Pathway,Study,adj.fdr.p,Rank) %>% 
+    mutate(Country = paste(StudyPos[index],".1",sep = ''),Test="Wilcoxon") %>% dplyr::rename(Species=1,Study=2,FDR=3,Rank=4,Country=5,Test=6) %>%
+    rbind(FigS5Data)
+  #Pair
+  middata <- read.csv(paste(name,"-Humann2-PairWilcoxonSign.csv",sep = ''),stringsAsFactors = F)
+  FigS5Data.mid  <- na.omit(middata) %>% data.frame() %>% filter(!((Increasing.Rank.Min == 1) & (Decreasing.Rank.Min == 1)))
+  FigS5Data.mid$Incre.aveRank.P <- FigS5Data.mid$Increasing.Rank.Average/10001
+  FigS5Data.mid2 <- data.frame(Species = c(FigS5Data.mid$Species,FigS5Data.mid$Species),Pvalue = c(FigS5Data.mid$Incre.aveRank.P,FigS5Data.mid$Decre.aveRank.P))
+  FigS5Data.mid3 <- FigS5Data.mid2%>% data.frame() %>% arrange(Species) %>% group_by(Species) %>% top_n(-1,Pvalue) %>% unique()
+  
+  
+  FigS5Data <- FigS5Data.mid3%>% data.frame() %>% arrange(Pvalue) %>% mutate(Rank = round(rank(Pvalue,ties.method = "min"),0)) %>% 
+    filter(Species %in% AllPathway4$Species) %>% mutate(Study = name) %>%
+    select(Species,Study,Pvalue,Rank) %>% 
+    mutate(Country = paste(StudyPos[index],".2",sep = ''),Test="Pair") %>% dplyr::rename(Species=1,Study=2,FDR=3,Rank=4,Country=5,Test=6) %>%
+    rbind(FigS5Data)
+}
+
+#Meta Wilcoxon
+MetaData <- read.csv("All-8Study-Contained-Pathway-wilcoxon-test.csv")
+FigS5Data  <- na.omit(MetaData) %>% data.frame() %>% arrange(adj.fdr.p) %>% mutate(Rank = round(rank(adj.fdr.p,ties.method = "min"),0),Study="Meta") %>% 
+  filter(Pathway %in% AllPathway4$Species) %>% select(Pathway,Study,adj.fdr.p,Rank) %>% 
+  mutate(Country = "Meta.1",Test="Wilcoxon") %>% dplyr::rename(Species=1,Study=2,FDR=3,Rank=4,Country=5,Test=6) %>%
+  rbind( FigS5Data)
+
+#Meta Pair
+MetaData <- read.csv("All-8Study-Contained-Pathway-pair-wilcoxonsign-res.csv")
+FigS5Data.mid  <- na.omit(MetaData) %>% data.frame() %>% filter(!((Increasing.Rank.Min == 1) & (Decreasing.Rank.Min == 1)))
+FigS5Data.mid$Incre.aveRank.P <- FigS5Data.mid$Increasing.Rank.Average/10001
+FigS5Data.mid2 <- data.frame(Species = c(FigS5Data.mid$Species,FigS5Data.mid$Species),Pvalue = c(FigS5Data.mid$Incre.aveRank.P,FigS5Data.mid$Decre.aveRank.P))
+FigS5Data.mid3 <- FigS5Data.mid2%>% data.frame() %>% arrange(Species) %>% group_by(Species) %>% top_n(-1,Pvalue) %>% unique()
+
+FigS5Data <- FigS5Data.mid3%>% data.frame() %>% arrange(Pvalue) %>% mutate(Rank = round(rank(Pvalue,ties.method = "min"),0)) %>% 
+  filter(Species %in% AllPathway4$Species) %>% mutate(Study="Meta") %>%
+  dplyr::select(Species,Study,Pvalue,Rank) %>% 
+  mutate(Country = "Meta.2",Test="Pair") %>% dplyr::rename(Species=1,Study=2,FDR=3,Rank=4,Country=5,Test=6) %>%
+  rbind(FigS5Data)
+
+write.csv(FigS5Data,"../Figure/FigureS5.AVE.Data.csv")
+
+### Figure
+FigS5Data <- read.csv("../Figure/FigureS5.AVE.Data.csv",row.names = 1,stringsAsFactors = F)
+Pdata <- FigS5Data %>% select(Species,Country,FDR,Test) %>% arrange(Country) %>% arrange(desc(Test))
+Pdata$Species <- factor(Pdata$Species,levels = AllPathway4$Species)
+Pdata <- Pdata[order(Pdata$Species),] %>% data.frame() %>% select(-Test) %>% spread(Country,FDR) %>% remove_rownames() %>%
+  column_to_rownames("Species")
+write.csv(Pdata,"../Figure/FigS5.Left.AVE.csv")
+
+Pdata.1 <- read.csv("../Figure/FigS5.Left.AVE.csv",row.names = 1,stringsAsFactors = F)
+#Pdata.1 <- Pdata.1 %>% dplyr::arrange(Meta.2,Meta.1)
+#Pdata <- t(Pdata)
+#rownames(Pdata.1) <- rownames(Pdata.1) %>% str_replace_all("_"," ")
+Pdata <- read.csv("../Figure/FigS5.Left.AVE.csv",row.names = 1,stringsAsFactors = F)
+Pdata <- Pdata %>% rownames_to_column() %>%
+  gather(key = "Condition",value = "FDR",-rowname)
+
+labels = c("<0.001","0.001-0.01","0.01-0.05",">0.05")
+breaks <- c(-1,0.001,0.01,0.05,1)
+breaks2 <- c(0,001,0.01,0.05)
+#mid <- data.frame(labels=labels,breaks=breaks2)
+Pdata$labels = cut(Pdata$FDR,breaks,labels,ordered_result = T)
+#Pdata<-merge(Pdata,mid,by= "labels")
+#Pdata$alpha <- Pdata$FDR/Pdata$breaks
+Pdata$rowname <-factor(Pdata$rowname,levels = AllPathway4$Species)
+interval.cols <- c("#8B1A1A","#FF6A6A","#FFC1C1","#EEE9E9")#brewer.pal(6,"Set2")
+names(interval.cols) <- levels(Pdata$labels)
+
+Pdata.2 <- Pdata %>% select(labels,rowname,Condition) %>% spread(Condition,labels) %>% 
+  mutate(rowname = factor(rowname,levels = AllPathway4$Species)) %>% dplyr::arrange(rowname) %>%
+  remove_rownames() %>% column_to_rownames("rowname") %>%
+  select(colnames(Pdata.1))
+
+## text note => False
+TextFunc <- function(dat, col = "black", fontsize = 9, numdat = TRUE,digit = 2){
+  if(numdat == TRUE){
+    function(j, i, x, y, width, height, fill){
+      grid.text(sprintf("%.0e", dat[i, j]), x, y, gp = gpar(fontsize = fontsize, col  = col))
+    }
+  }else{
+    function(j, i, x, y, width, height, fill){
+      grid.text(sprintf("%.0e", dat[i, j]), x, y, gp = gpar(fontsize = fontsize, col  = col))
+    }
+  }}
+###
+col_cat <- c("<0.001"="#8B1A1A","0.001-0.01"="#FF6A6A","0.01-0.05"="#FFC1C1",">0.05"="#EEE9E9")
+
+### FigS5 left
+Country.Heatmap <- c("AUS","CHI","FRA","GER","ITA1","ITA2","JAP","USA","Meta")
+Pdata.2.mid1 <- Pdata.2 %>% select(ends_with(".1")) %>% select(paste(Country.Heatmap,".1",sep = ''))
+rownames(Pdata.2.mid1) <- rownames(Pdata.2.mid1) %>% str_replace_all("_"," ")
+colnames(Pdata.2.mid1) = Country.Heatmap
+#Pdata.2.mid1 <- t(Pdata.2.mid1)
+
+Pdata.1.mid1 <- Pdata.1 %>% select(ends_with(".1")) %>% select(paste(Country.Heatmap,".1",sep = ''))
+rownames(Pdata.1.mid1) <- rownames(Pdata.1.mid1) %>% str_replace_all("_"," ")
+colnames(Pdata.1.mid1) = Country.Heatmap
+#Pdata.1.mid1 <- t(Pdata.1.mid1)
+
+
+pdf("../Figure/FigS5.Left.AVE.pdf",width = 7,height = 4)
+Heatmap(Pdata.2.mid1, rect_gp = gpar(lwd = 1, col = "black"), 
+        name = "FDR",
+        col = col_cat,
+        show_row_names = T,
+        show_column_names = T,na_col="white",
+        cell_fun = TextFunc(Pdata.1.mid1)
+)
+dev.off()
+
+### FigS5 Right
+Pdata.2.mid2 <- Pdata.2 %>% select(ends_with(".2")) %>% select(paste(Country.Heatmap,".2",sep = ''))
+rownames(Pdata.2.mid2) <- rownames(Pdata.2.mid2) %>% str_replace_all("_"," ")
+colnames(Pdata.2.mid2) = Country.Heatmap
+#Pdata.2.mid2 <- t(Pdata.2.mid2)
+
+Pdata.1.mid2 <- Pdata.1 %>% select(ends_with(".2")) %>% select(paste(Country.Heatmap,".2",sep = ''))
+rownames(Pdata.1.mid2) <- rownames(Pdata.1.mid2) %>% str_replace_all("_"," ")
+colnames(Pdata.1.mid2) = Country.Heatmap
+#Pdata.1.mid2 <- t(Pdata.1.mid2)
+
+
+pdf("../Figure/FigS5.Right.AVE.pdf",width = 7,height = 4)
+Heatmap(Pdata.2.mid2, rect_gp = gpar(lwd = 1, col = "black"), 
+        name = "FDR",
+        col = col_cat,
+        show_row_names = T,
+        show_column_names = T,na_col="white",
+        cell_fun = TextFunc(Pdata.1.mid2)
+)
+dev.off()
 
 ###########################################################################################################################
 

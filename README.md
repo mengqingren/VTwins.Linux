@@ -38,7 +38,7 @@ Rscript PairFind.Linux.R -d test.data/test.data.txt -g test.data/test.phenodata.
 - `-w`: filename of shuffle W stats
 - `-b`: filename of output boundary samples with distance
 - `-p`: filename of output final pairs 
-- `-s`: shuffle time
+- `-s`: shuffle times
 - `-n`: lower percentage of shuffle pairs
 - `-u`: higher percentage of shuffle pairs
 - `-c`: p value cutoff of `Incre.aveRank.P` and `Decre.aveRank.P`

@@ -43,7 +43,7 @@ Rscript PairFind.Linux.R -d test.data/test.data.txt -g test.data/test.phenodata.
 - `-u`: higher percentage of shuffle pairs
 - `-c`: p value cutoff of `Incre.aveRank.P` and `Decre.aveRank.P`
 
-**Note:** if the sample pairs are less than 10, if will return nothing.
+**Note:** if the sample pairs are less than 10, it will return nothing.
 
 ### Output
 - **Decre.aveRank.P** : P value based on averange rank. Generally, to confirm the significant features, we usually use variable `Decre.aveRank.P` to evaluate the disease-enriched features and `Incre.aveRank.P` to evaluate the control enriched features. 

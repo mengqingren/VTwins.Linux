@@ -168,7 +168,8 @@ pair_find<-function(data=data,phenodata=data.frame(),k="euclidean",SavePath = NU
   if (dim(results_sample_pair)[1] > 1) {
     res<-results_sample_pair[,1:(2*RAN_knn_num+2*RAP_knn_num+2)]
   }else{
-    cat("Nothing Done \n")
+    #cat("Nothing Done \n")
+    cat("Insufficient number of paired samples\n")
     return(NULL)
   }
   
@@ -228,11 +229,15 @@ pair_find<-function(data=data,phenodata=data.frame(),k="euclidean",SavePath = NU
   pairinfor <- Extract_Dist(pairinfor)
   pairinfor <- pairinfor %>% data.frame() %>% dplyr::select(-Distance)
   
+  #write.csv(pairinfor,file = "test.csv",row.names = F)
+  cat(paste("the redundant pair number is ",dim(pairinfor)[1],"\n",sep = ''))
+  if (dim(pairinfor)[1] < 10){
+    cat("Insufficient number of paired samples\n")
+    return(NULL)
+  }
   if (!is.null(BoundaryPair)) {
     write.csv(pairinfor,paste(SavePath,"/",BoundaryPair,".csv",sep = ''),row.names = F)
   }
-  #write.csv(pairinfor,file = "test.csv",row.names = F)
-  cat(paste("the redundant pair number is ",dim(pairinfor)[1],"\n",sep = ''))
   cat("PAIR FINISHED\n")
   #return(pairinfor)
   

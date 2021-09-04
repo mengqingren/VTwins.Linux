@@ -2,7 +2,7 @@
 ###
 #Author: Meng
 #Usage:
-#Rscript PairFind.Linux.R -d dataset.txt -g phe_Data.txt -m euclidean -O ./ -s 10000 -u 0.8 -d 0.2 -w Wstat -b BoundarySample -p BoundaryPair -o Finalresult.txt 
+#Rscript PairFind.Linux.R -d dataset.txt -g phe_Data.txt -m euclidean -O ./ -s 10000 -u 0.8 -d 0.2 -w Wstat -b BoundarySample -p BoundaryPair -c 0.05 -o Finalresult.txt 
 ###
 suppressMessages(suppressWarnings(library(tidyverse)))
 suppressMessages(suppressWarnings(library(optparse)))

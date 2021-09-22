@@ -2766,7 +2766,12 @@ cal_w(c(85,70,40,65,80,75,55,20),c(75,50,50,40,20,65,40,25))
 cal_w(c(118,134,130,124,105,130,130,132,123,128,126,140,135,126,132),c(125,132,138,120,125,127,136,139,131,132,135,136,128,127,130))
 cal_w(Middata.mid$Ctrl,Middata.mid$CRC)
 
-
+#PWY.5667..CDP.diacylglycerol.biosynthesis.I #Pathway223
+#PWY0.1319..CDP.diacylglycerol.biosynthesis.II #Pathway467
+#PWY.4984..urea.cycle #Pathway162
+#PWY.6123..inosine.5..phosphate.biosynthesis.I #Pathway275
+#PWY.6124..inosine.5..phosphate.biosynthesis.II #Pathway276
+#PWY.7234..inosine.5..phosphate.biosynthesis.III #Pathway403
 
 for (i in 1:10) {
   for (j in 1:8) {

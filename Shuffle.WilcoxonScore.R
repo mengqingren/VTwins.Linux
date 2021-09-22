@@ -1925,14 +1925,14 @@ setwd("K:/CRC-Pair/Unique.Pair.Permutation")
 summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,conf.interval=.95, .drop=TRUE) {
   library(plyr)
   
-  # ¼ÆËã³¤¶È
+  # è®¡ç®—é•¿åº¦
   length2 <- function (x, na.rm=FALSE) {
     if (na.rm) sum(!is.na(x))
     else       length(x)
   }
   
-  # ÒÔ groupvars Îª×é,¼ÆËãÃ¿×éµÄ³¤¶È,¾ùÖµ,ÒÔ¼°±ê×¼²î
-  # ddply ¾ÍÊÇ dplyr ÖÐµÄ group_by + summarise
+  # ä»¥ groupvars ä¸ºç»„,è®¡ç®—æ¯ç»„çš„é•¿åº¦,å‡å€¼,ä»¥åŠæ ‡å‡†å·®
+  # ddply å°±æ˜¯ dplyr ä¸­çš„ group_by + summarise
   datac <- ddply(data, groupvars, .drop=.drop,
                  .fun = function(xx, col) {
                    c(N    = length2(xx[[col]], na.rm=na.rm),
@@ -1943,16 +1943,16 @@ summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,conf.in
                  measurevar
   )
   
-  # ÖØÃüÃû  
+  # é‡å‘½å  
   datac <- plyr::rename(datac, c("mean" = measurevar))
   
-  # ¼ÆËã±ê×¼Æ«²î
+  # è®¡ç®—æ ‡å‡†åå·®
   datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
   
   # Confidence interval multiplier for standard error
   # Calculate t-statistic for confidence interval: 
   # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
-  # ¼ÆËãÖÃÐÅÇø¼ä
+  # è®¡ç®—ç½®ä¿¡åŒºé—´
   ciMult <- qt(conf.interval/2 + .5, datac$N-1)
   datac$ci <- datac$se * ciMult
   
@@ -1986,7 +1986,7 @@ for (feature in seq(10,50,10)) {
     geom_bar(position=position_dodge(),stat='identity',colour='black') +
     geom_jitter(data=mid,aes(StudyPos,AUC),color="grey60",position=position_dodge(width=0.85))+
     geom_errorbar(aes(x=StudyPos,ymin=AUC-se, ymax=AUC+se),
-                  width=.3,size=1, # ÉèÖÃÎó²îÏßµÄ¿í¶È 
+                  width=.3,size=1, # è®¾ç½®è¯¯å·®çº¿çš„å®½åº¦ 
                   position=position_dodge(.8))+
     theme_few()+
     labs(y="AUC",x="")+scale_y_continuous(expand = c(0,0),limits = c(0,1))+
@@ -2623,6 +2623,117 @@ Heatmap(Pdata.2.mid2, rect_gp = gpar(lwd = 1, col = "black"),
         cell_fun = TextFunc(Pdata.1.mid2)
 )
 dev.off()
+
+#### Figure 4 => boxplot ####
+setwd("D:/CRC-Pair/Pathway-8Study-20201010/Res")
+PairData <- read.csv("../All-8Study-Contained.Pathway.pair.csv")
+AbunData <- read.table("../EightStudies-PathwayAbundance-Group.txt",row.names = 1,header = T,sep = '\t')
+
+#PWY.5667..CDP.diacylglycerol.biosynthesis.I #Pathway223
+#PWY0.1319..CDP.diacylglycerol.biosynthesis.II #Pathway467
+#PWY.4984..urea.cycle #Pathway162
+#PWY.6123..inosine.5..phosphate.biosynthesis.I #Pathway275
+#PWY.6124..inosine.5..phosphate.biosynthesis.II #Pathway276
+#PWY.7234..inosine.5..phosphate.biosynthesis.III #Pathway403
+middata <- AbunData[rownames(AbunData) %in% c(unique(PairData$Ctl),unique(PairData$Disease)),]
+middata2 <- middata[,c(1,2,225,164,277,278,405,469)]
+
+p1<-ggplot(middata2,aes(x=study_condition,y=PWY.5667..CDP.diacylglycerol.biosynthesis.I,color=study_condition)) +
+  geom_boxplot()+
+  geom_jitter(width = 0.1,height = 0,size=0.3)+
+  theme_few()+
+  theme(legend.position = "none")+
+  labs(x="",y="Relative Abundance",title = "CDP-diacylglycerol biosynthesis I")+
+  theme(axis.text = element_text(size=13),axis.title = element_text(size=15))+
+  scale_color_manual(values = c("#1E90FF","#DC143C"))
+
+ggsave(p1,filename = "../../Figure/Figure4b.CDP.pdf",width = 3.5,height = 3)
+
+p6<-ggplot(middata2,aes(x=study_condition,y=PWY0.1319..CDP.diacylglycerol.biosynthesis.II,color=study_condition)) +
+  geom_boxplot()+
+  geom_jitter(width = 0.1,height = 0,size=0.3)+
+  theme_few()+
+  theme(legend.position = "none")+
+  labs(x="",y="Relative Abundance",title = "CDP-diacylglycerol biosynthesis II")+
+  theme(axis.text = element_text(size=13),axis.title = element_text(size=15))+
+  scale_color_manual(values = c("#1E90FF","#DC143C"))
+
+ggsave(p6,filename = "../../Figure/Figure4b.CDPII.pdf",width = 3.5,height = 3)
+
+p2<-ggplot(middata2,aes(x=study_condition,y=PWY.4984..urea.cycle,color=study_condition)) +
+  geom_boxplot()+
+  geom_jitter(width = 0.1,height = 0,size=0.3)+
+  theme_few()+
+  theme(legend.position = "none")+
+  labs(x="",y="Relative Abundance",title = "urea cycle")+
+  theme(axis.text = element_text(size=13),axis.title = element_text(size=15))+
+  scale_color_manual(values = c("#1E90FF","#DC143C"))
+
+ggsave(p2,filename = "../../Figure/Figure4b.ureacycle.pdf",width = 3.5,height = 3)
+
+p3<-ggplot(middata2,aes(x=study_condition,y=PWY.6123..inosine.5..phosphate.biosynthesis.I,color=study_condition)) +
+  geom_boxplot()+
+  geom_jitter(width = 0.1,height = 0,size=0.3)+
+  theme_few()+
+  theme(legend.position = "none")+
+  labs(x="",y="Relative Abundance",title = "IMP biosynthesis I")+
+  theme(axis.text = element_text(size=13),axis.title = element_text(size=15))+
+  scale_color_manual(values = c("#1E90FF","#DC143C"))
+
+ggsave(p3,filename = "../../Figure/Figure4b.IMP1.pdf",width = 3.5,height = 3)
+
+p4<-ggplot(middata2,aes(x=study_condition,y=PWY.6124..inosine.5..phosphate.biosynthesis.II,color=study_condition)) +
+  geom_boxplot()+
+  geom_jitter(width = 0.1,height = 0,size=0.3)+
+  theme_few()+
+  theme(legend.position = "none")+
+  labs(x="",y="Relative Abundance",title = "IMP biosynthesis II")+
+  theme(axis.text = element_text(size=13),axis.title = element_text(size=15))+
+  scale_color_manual(values = c("#1E90FF","#DC143C"))
+
+ggsave(p4,filename = "../../Figure/Figure4b.IMP2.pdf",width = 3.5,height = 3)
+
+p5<-ggplot(middata2,aes(x=study_condition,y=PWY.7234..inosine.5..phosphate.biosynthesis.III,color=study_condition)) +
+  geom_boxplot()+
+  geom_jitter(width = 0.1,height = 0,size=0.3)+
+  theme_few()+
+  theme(legend.position = "none")+
+  labs(x="",y="Relative Abundance",title = "IMP biosynthesis III")+
+  theme(axis.text = element_text(size=13),axis.title = element_text(size=15))+
+  scale_color_manual(values = c("#1E90FF","#DC143C"))
+
+ggsave(p5,filename = "../../Figure/Figure4b.IMP3.pdf",width = 3.5,height = 3)
+
+## Sum the same pathway
+middata2$"IMP biosynthesis I+II+III" <- middata2$PWY.6123..inosine.5..phosphate.biosynthesis.I+
+  middata2$PWY.6124..inosine.5..phosphate.biosynthesis.II+
+  middata2$PWY.7234..inosine.5..phosphate.biosynthesis.III
+  
+p8<-ggplot(middata2,aes(x=study_condition,y=`IMP biosynthesis I+II+III`,color=study_condition)) +
+  geom_boxplot()+
+  geom_jitter(width = 0.1,height = 0,size=0.3)+
+  theme_few()+
+  theme(legend.position = "none")+
+  labs(x="",y="Relative Abundance",title = "IMP biosynthesis I+II+III")+
+  theme(axis.text = element_text(size=13),axis.title = element_text(size=15))+
+  scale_color_manual(values = c("#1E90FF","#DC143C"))#+stat_compare_means(comparisons=c("control","CRC"),label = "p.value",hide.ns = F)
+
+ggsave(p8,filename = "../../Figure/Figure4b.IMP1+2+3.pdf",width = 3.5,height = 3)
+
+middata2$"CDP-diacylglycerol biosynthesis I+II" = middata2$PWY.5667..CDP.diacylglycerol.biosynthesis.I + 
+  middata2$PWY0.1319..CDP.diacylglycerol.biosynthesis.II
+
+p7<-ggplot(middata2,aes(x=study_condition,y=`CDP-diacylglycerol biosynthesis I+II`,color=study_condition)) +
+  geom_boxplot()+
+  geom_jitter(width = 0.1,height = 0,size=0.3)+
+  theme_few()+
+  theme(legend.position = "none")+
+  labs(x="",y="Relative Abundance",title = "CDP-diacylglycerol biosynthesis I+II")+
+  theme(axis.text = element_text(size=13),axis.title = element_text(size=15))+
+  scale_color_manual(values = c("#1E90FF","#DC143C"))
+
+ggsave(p7,filename = "../../Figure/Figure4b.CDP1+2.pdf",width = 3.5,height = 3)
+
 
 ###########################################################################################################################
 

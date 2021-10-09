@@ -56,7 +56,7 @@ if (! opt$method %in% c("euclidean","maximum","manhattan", "canberra", "binary",
   stop("You must input the right distance calculating methods", call.=FALSE)
 }
 
-data <- read.table(opt$dataset,header = T,row.names = 1,sep = '\t')
+data <- read.csv(opt$dataset,row.names = 1,sep = '\t')
 phe_data <- read.table(opt$group,header = T,sep = "\t")
 
 pair_find<-function(data=data,phenodata=data.frame(),k="euclidean",SavePath = NULL,ShuffleWstat = NULL,PvalueCutoff=0.05, BoundarySample = NULL,BoundaryPair=NULL,ShuffleTime=10000,DownPercent = 0.2,Uppercent=0.8){ # colnames(phenodata) = c("id","grp"); grp1 = "Ctrl", grp2 = "Disease"

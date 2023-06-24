@@ -36,7 +36,7 @@ Rscript PairFind.Linux.R -d test.data/test.data.txt -g test.data/test.phenodata.
 - `-m`: distance calculating method. it must bu consist with the method in `dist` function.
 - `-a`: filename of output directory. Default: ./
 - `-Cp`: redundant pair cut off. Default: 25
-- `-cm`: test method for pairs more that pair cutoff
+- `-cm`: test method for pairs more that pair cutoff. Default: Permutation
 - `-w`: filename of shuffle W stats
 - `-b`: filename of output boundary samples with distance
 - `-p`: filename of output final pairs 

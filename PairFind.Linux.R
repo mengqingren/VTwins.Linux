@@ -2,7 +2,7 @@
 ###
 #Author: Meng
 #Usage:
-#Rscript PairFind.Linux.R -d dataset.txt -g phe_Data.txt -m euclidean -O ./ -s 10000 -u 0.8 -d 0.2 -w Wstat -b BoundarySample -p BoundaryPair -c 0.05 -o Finalresult.txt 
+#Rscript PairFind.Linux.R -d dataset.txt -g phe_Data.txt -m euclidean -O ./ -Cp 25 -mc Permutation -s 10000 -u 0.8 -d 0.2 -w Wstat -b BoundarySample -p BoundaryPair -c 0.05 -o Finalresult.txt 
 ###
 suppressMessages(suppressWarnings(library(tidyverse)))
 suppressMessages(suppressWarnings(library(optparse)))
@@ -16,6 +16,10 @@ option_list = list(
               help="the distance measure to be used [default %default]", metavar="character"),
   make_option(c("-s", "--shuffletime"), type="integer", default=10000, 
               help="Number of shuffle time [default %default] ",metavar="number"),
+  make_option(c("-Cp", "--Cut_pair"), type="integer", default=25, 
+              help="Number of redundant pair cutoff [default %default] ",metavar="number"),
+  make_option(c("-mc", "--mothod_choose"), type="character", default = "Permutation",
+              help="test method to be used for pair >= Cut_pair [default %default]", metavar="character"),
   make_option(c("-u", "--uppercent"), type="double", default=0.8, 
               help="up percent of shuffle pair [default %default]",metavar="number"),
   make_option(c("-n", "--downpercent"), type="double", default=0.2, 
@@ -56,10 +60,18 @@ if (! opt$method %in% c("euclidean","maximum","manhattan", "canberra", "binary",
   stop("You must input the right distance calculating methods", call.=FALSE)
 }
 
+if (! opt$method_choose %in% c("Permutation","Wilcox")) {
+  stop("You must input the right test method for larger redundant pairs", call.=FALSE)
+}
+
+
 data <- read.csv(opt$dataset,row.names = 1,sep = '\t')
 phe_data <- read.table(opt$group,header = T,sep = "\t")
 
-pair_find<-function(data=data,phenodata=data.frame(),k="euclidean",SavePath = NULL,ShuffleWstat = NULL,PvalueCutoff=0.05, BoundarySample = NULL,BoundaryPair=NULL,ShuffleTime=10000,DownPercent = 0.2,Uppercent=0.8){ # colnames(phenodata) = c("id","grp"); grp1 = "Ctrl", grp2 = "Disease"
+pair_find<-function(data=data,phenodata=data.frame(),k="euclidean",SavePath = NULL,ShuffleWstat = NULL,PvalueCutoff=0.05, 
+                    Cut_pair=25, method_choose=c("Wilcox","Permutation"),
+                    BoundarySample = NULL,BoundaryPair=NULL,
+                    ShuffleTime=10000,DownPercent = 0.2,Uppercent=0.8){ # colnames(phenodata) = c("id","grp"); grp1 = "Ctrl", grp2 = "Disease"
   suppressMessages(library(tidyverse))
   #suppressMessages(library(fdrtool))
   #suppressMessages(library(qvalue))
@@ -241,23 +253,23 @@ pair_find<-function(data=data,phenodata=data.frame(),k="euclidean",SavePath = NU
   cat("PAIR FINISHED\n")
   #return(pairinfor)
   
-  ###### Pair shuffle
-  
-  ShufflePair <- lapply(1:ShuffleTime, function(Shuffle){
+  ###### Pair shuffle or Wilcox Rank test #####
+  if((dim(pairinfor)[1] < 25) | (dim(pairinfor)[1] >= 25 & method_choose == "Permutation")){
+    ShufflePair <- lapply(1:ShuffleTime, function(Shuffle){
     Random <- runif(1,DownPercent,Uppercent)
     n <- round(dim(pairinfor)[1]*Random,0)
     RandomIndex <- sample(1:dim(pairinfor)[1],n,replace = F)
-    
+
     pairinforMiddata.mid1.1 <- pairinfor[-RandomIndex,] %>% data.frame()
     pairinforMiddata.mid2 <- pairinfor[RandomIndex,] %>% data.frame()
     pairinforMiddata.mid2.1 <- data.frame(Ctl = pairinforMiddata.mid2$Disease, Disease = pairinforMiddata.mid2$Ctl)
     pairinforMiddata.mid <- rbind(pairinforMiddata.mid1.1,pairinforMiddata.mid2.1) %>% data.frame()
   })
-  
+
   cat("SHUFFLE PAIR FINISHED\n")
-  #View(ShufflePair)
+
   ####### calculate W stat and rank
-  FinalMatrix <- matrix(ncol = 2+ShuffleTime,nrow = 0) #Species, Original W, 
+  FinalMatrix <- matrix(ncol = 2+ShuffleTime,nrow = 0) #Species, Original W,
   MeanData <- matrix(ncol = 3,nrow = 0) # record mean value of pair
   for (i in 1:dim(data)[2]) {
     ### original cohort
@@ -273,18 +285,18 @@ pair_find<-function(data=data,phenodata=data.frame(),k="euclidean",SavePath = NU
     test<-wilcox.test(Middata$Ctrl,Middata$CRC,paired = TRUE)
     AllNW <- (dim(pairinfor)[1]*(dim(pairinfor)[1]+1))/2
     OriginalStat = AllNW - test$statistic
-    
+
     Ctrlmean <- mean(Middata$Ctrl)
     CRCmean <- mean(Middata$CRC)
     MeanData <- rbind(MeanData,c(as.character(colnames(data)[i]),Ctrlmean,CRCmean))
-    
+
     cat(as.character(colnames(data)[i]))
     cat("\n")
     #print(AllNW)
-    
+
     ### calculate shuffle W stat
     #ShuffleStat <- rep(NA,ShuffleTime)
-    
+
     ShuffleStat <- lapply(ShufflePair, function(x){
       former<-rep(NA,dim(x)[1])
       latter<-rep(NA,dim(x)[1])
@@ -294,7 +306,7 @@ pair_find<-function(data=data,phenodata=data.frame(),k="euclidean",SavePath = NU
         index_latter<-which(rownames(data) == x$Disease[j])
         latter[j]=as.numeric(as.character(data[index_latter,i]))
       }
-      
+
       Middata.mid <- data.frame(Ctrl = former, CRC = latter)
       test1<-wilcox.test(Middata.mid$Ctrl,Middata.mid$CRC,paired = TRUE)
       #ShuffleStat[Iter] = AllNW - test1$statistic
@@ -304,11 +316,11 @@ pair_find<-function(data=data,phenodata=data.frame(),k="euclidean",SavePath = NU
     FinalMatrix <- rbind(FinalMatrix,c(as.character(colnames(data)[i]),OriginalStat,ShuffleStat))
   }
   colnames(FinalMatrix) <- c("Feature","OriginalSata.W",paste("ShuffleStat.W.",1:ShuffleTime,sep = ""))
-  
+
   if (!is.null(ShuffleWstat)) {
     write.csv(pairinfor,paste(SavePath,"/",ShuffleWstat,".csv",sep = ''),row.names = F)
   }
-  
+
   Mid.Matrix <- matrix(ncol = 6,nrow = 0)
   for (I.index in 1:dim(FinalMatrix)[1]) {
     Increasing.Rank.Min <- rank(as.numeric(as.character(FinalMatrix[I.index,2:(ShuffleTime+2)])),ties.method= "min")[1]
@@ -319,9 +331,9 @@ pair_find<-function(data=data,phenodata=data.frame(),k="euclidean",SavePath = NU
     Decreasing.Rank.Average <- rank(-as.numeric(as.character(FinalMatrix[I.index,2:(ShuffleTime+2)])),ties.method= "average")[1]
     Mid.Matrix <- rbind(Mid.Matrix,c(Increasing.Rank.Min,Decreasing.Rank.Min,Increasing.Rank.Max,Decreasing.Rank.Max,Increasing.Rank.Average,Decreasing.Rank.Average))
   }
-  Mid.Matrix <- Mid.Matrix %>% data.frame() %>% remove_rownames() %>% 
+  Mid.Matrix <- Mid.Matrix %>% data.frame() %>% remove_rownames() %>%
     dplyr::rename(Increasing.Rank.Min=1,Decreasing.Rank.Min=2,Increasing.Rank.Max=3,Decreasing.Rank.Max=4,Increasing.Rank.Average=5,Decreasing.Rank.Average=6)
-  
+
   Mid.Matrix$Decre.maxRank.P <- Mid.Matrix$Decreasing.Rank.Max/(ShuffleTime+1)
   Mid.Matrix$Decre.aveRank.P <- Mid.Matrix$Decreasing.Rank.Average/(ShuffleTime+1)
   Mid.Matrix$Decre.minRank.P <- Mid.Matrix$Decreasing.Rank.Min/(ShuffleTime+1)
@@ -329,33 +341,59 @@ pair_find<-function(data=data,phenodata=data.frame(),k="euclidean",SavePath = NU
   Mid.Matrix$Incre.aveRank.P <- Mid.Matrix$Increasing.Rank.Average/(ShuffleTime+1)
   Mid.Matrix$Incre.minRank.P <- Mid.Matrix$Increasing.Rank.Min/(ShuffleTime+1)
   Mid.Matrix$Species <- FinalMatrix[,1] #Feature
-  
+
   Mid.Matrix <- Mid.Matrix %>% data.frame() %>%
-    dplyr::arrange(Decre.minRank.P) %>% 
+    dplyr::arrange(Decre.minRank.P) %>%
     dplyr::mutate(Decre.minRank.P.FDR = p.adjust(.$Decre.minRank.P,method = "BH",n=length(.$Decre.minRank.P))) %>%
-    dplyr::arrange(Decre.maxRank.P) %>% 
+    dplyr::arrange(Decre.maxRank.P) %>%
     dplyr::mutate(Decre.maxRank.P.FDR = p.adjust(.$Decre.maxRank.P,method = "BH",n=length(.$Decre.maxRank.P))) %>%
-    dplyr::arrange(Decre.aveRank.P) %>% 
+    dplyr::arrange(Decre.aveRank.P) %>%
     dplyr::mutate(Decre.aveRank.P.FDR = p.adjust(.$Decre.aveRank.P,method = "BH",n=length(.$Decre.aveRank.P))) %>%
     dplyr::arrange(Incre.aveRank.P) %>%
     dplyr::mutate(Incre.aveRank.P.FDR = p.adjust(.$Incre.aveRank.P,method = "BH",n=length(.$Incre.aveRank.P)))
 
-  
   MeanData <- MeanData %>% data.frame() %>% dplyr::rename(Species=1,Ctlmean=2,Dismean=3)
-  Mid.Matrix <- merge(Mid.Matrix,MeanData,by="Species") %>% data.frame() %>% mutate(Enriched = if_else(Decre.aveRank.P <= PvalueCutoff,"Disease",if_else(Incre.aveRank.P <= PvalueCutoff,"Ctrl","N.S.")))
-  
+  Mid.Matrix <- merge(Mid.Matrix,MeanData,by="Species") %>% data.frame() %>% mutate(Enrieched = if_else(Decre.aveRank.P <= PvalueCutoff,"Disease",if_else(Incre.aveRank.P <= PvalueCutoff,"Ctrl","N.S.")))
+  } else{
+    Mid.Matrix <- data.frame()
+    for (i in 1:dim(data)[2]) {
+      ### original cohort
+      former<-rep(NA,dim(pairinfor)[1])
+      latter<-rep(NA,dim(pairinfor)[1])
+      for (j in 1:dim(pairinfor)[1]) {
+        index_former<-which(rownames(data) == pairinfor$Ctl[j])
+        former[j]=as.numeric(as.character(data[index_former,i]))
+        index_latter<-which(rownames(data) == pairinfor$Disease[j])
+        latter[j]=as.numeric(as.character(data[index_latter,i]))
+      }
+      Middata <- data.frame(Ctrl = former, CRC = latter)
+      test<-wilcox.test(Middata$Ctrl,Middata$CRC,paired = TRUE)
+
+      Ctrlmean <- mean(Middata$Ctrl)
+      CRCmean <- mean(Middata$CRC)
+      #MeanData <- rbind(MeanData,c(as.character(colnames(data)[i]),Ctrlmean,CRCmean))
+      Mid.Matrix <- data.frame(Species=as.character(colnames(data)[i]),Ctrlmean=Ctrlmean,Dismean=CRCmean,pvalue=test$p.value) %>% mutate(Enrieched = if_else(pvalue <= PvalueCutoff,"Sig","None")) %>% rbind.data.frame(Mid.Matrix)
+    }
+  }
+  if (!is.null(Mid.Matrix)) {
+    write.csv(pairinfor,paste(SavePath,"/PairFind.Output.csv",sep = ''),row.names = F)
+  }
   cat("All done\n")
   return(Mid.Matrix)
+  
 }# END - function: Pair_Find
 
 res <- pair_find(data=data,
                  phenodata=phe_data,
                  k=opt$method,
                  SavePath=opt$savepath,
+                 Cut_pair=opt$Cut_pair, 
+                 method_choose=opt$method_choose,
                  ShuffleWstat = opt$ShuffleWstat,
                  BoundarySample = opt$BoundarySample,
                  BoundaryPair = opt$BoundaryPair,
-                 ShuffleTime=opt$shuffletime,DownPercent = opt$downpercent,Uppercent=opt$uppercent,PvalueCutoff=opt$PvalueCutoff)
+                 ShuffleTime=opt$shuffletime,DownPercent = opt$downpercent,
+                 Uppercent=opt$uppercent,PvalueCutoff=opt$PvalueCutoff)
 
 write.table(res,file = paste(opt$savepath,"/",opt$output,sep = ''),sep = "\t",quote = F,row.names = F)
 

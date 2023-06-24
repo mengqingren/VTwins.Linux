@@ -27,7 +27,7 @@ unzip VTwins.Linux-main.gz
 
 ### Basic Usage
 <pre>
-Rscript PairFind.Linux.R -d test.data/test.data.txt -g test.data/test.phenodata.txt -a test.data/ -m euclidean -s 10000 -u 0.8 -n 0.2 -w ShuffleWstat -b BoundarySample -p BoundaryPair -o Results.txt -c 0.01
+Rscript PairFind.Linux.R -d test.data/test.data.txt -g test.data/test.phenodata.txt -a test.data/ -m euclidean -Cp 25 -cm Permutation -s 10000 -u 0.8 -n 0.2 -w ShuffleWstat -b BoundarySample -p BoundaryPair -o Results.txt -c 0.01
 </pre>
 
 ### Parameter Description
@@ -35,6 +35,8 @@ Rscript PairFind.Linux.R -d test.data/test.data.txt -g test.data/test.phenodata.
 - `-g`: must be a data frame with two columns, and colnames are `id` (column 1) and `grp` (column 2). column id represent the sample id, column grp consist of `grp1` and `grp2`, representing the ctrl and disease, repsectively.
 - `-m`: distance calculating method. it must bu consist with the method in `dist` function.
 - `-a`: filename of output directory. Default: ./
+- `-Cp`: redundant pair cut off. Default: 25
+- `-cm`: test method for pairs more that pair cutoff
 - `-w`: filename of shuffle W stats
 - `-b`: filename of output boundary samples with distance
 - `-p`: filename of output final pairs 

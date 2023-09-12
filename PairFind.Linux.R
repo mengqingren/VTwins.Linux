@@ -41,7 +41,7 @@ option_list = list(
   #make_option(c("-h", "--help"), action="store_true", default=FALSE, help="Show this help message and exit")
 )
 
-#opt_parser = OptionParser(option_list=option_list)
+opt_parser = OptionParser(option_list=option_list)
 #opt = parse_args(opt_parser)
 #cat(1)
 opt <- parse_args(OptionParser(option_list=option_list))
